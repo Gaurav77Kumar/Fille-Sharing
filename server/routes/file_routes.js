@@ -1,6 +1,8 @@
 import express from "express";
 import auth_middleware from "../middleware/auth_middleware.js";
 import { upload } from "../middleware/multer.js";
+import multer from "multer";
+import rateLimit from "express-rate-limit";
 import {
     uploadFiles,
     downloadFile,
@@ -25,75 +27,56 @@ import {
     verifyGuestFilePassword,
 } from "../controllers/file_controller.js";
 
+
+const guestUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024, files: 3},
+    fileFilter: (req, file, cb) => {
+        const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
+        ALLOWED.includes(file.mimetype) ? cb(null, true) : cb(new Error("Only JPEG, PNG, PDF, and TXT files are allowed"));
+    }
+})
+
+// Rate limiter - brute force protection for password verify
+const passwordRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, 
+    message: { message: "Too many attempts, please try again later"},
+    standardHeaders: true,
+})
+
 const router = express.Router();
 
+router.post("/upload", auth_middleware, upload.array("files", 10), uploadFiles);
+router.get("/my-files",  auth_middleware,  showUserFiles);
+router.get("/search",    auth_middleware,  searchFiles);
 
-
-// Upload files (authenticated users)
-router.post("/upload", auth_middleware, upload.array("files", 10), uploadFiles); // Done
-
-// Get all user files
-router.get("/user-files", auth_middleware, getUserFiles);  // DONE
-  
-// Show user files with pagination
-router.get("/my-files", auth_middleware, showUserFiles);  // DONE
-
-// Search files
-router.get("/search", auth_middleware, searchFiles);    // DONE
-
-// Get file details
-router.get("/details/:fileId", auth_middleware, getFileDetails);
-
-// Get download info
-router.get("/download-info/:fileId", auth_middleware, downloadInfo);  // DONE
-
-// Download file
+router.get("/details/:fileId",   auth_middleware,   getFileDetails);
+router.get("/download-info/:fileId", auth_middleware, downloadInfo);
 router.get("/download/:fileId", auth_middleware, downloadFile);
-
-// Get download count
 router.get("/download-count/:fileId", auth_middleware, getDownloadCount);
 
-// Delete file
 router.delete("/delete/:fileId", auth_middleware, deleteFile);
-
-// Update file status
 router.patch("/status/:fileId", auth_middleware, updateFileStatus);
-
-// Update file expiry
 router.patch("/expiry/:fileId", auth_middleware, updateFileExpiry);
-
-// Update file password
 router.patch("/password/:fileId", auth_middleware, updateFilePassword);
-
-// Update all files expiry
 router.patch("/expiry-all", auth_middleware, updateAllFileExpiry);
 
-// Generate share link
 router.get("/share-link/:fileId", auth_middleware, generateShareShortenLink);
-
-// Send link via email
-router.post("/send-email/:fileId", auth_middleware, sendLinkEmail);   // DONE
-
-// Generate QR code
-router.get("/qr/:fileId", auth_middleware, generateQR);    // DONE
-
-// Verify file password (for authenticated shared files)
-router.post("/verify-password/:fileId", verifyFilePassword);
+router.post("/send-email/:fileId", auth_middleware, sendLinkEmail);
+router.get("/qr/:fileId", auth_middleware, generateQR);
 
 
+router.get("/share/: slug", resolveShareLink);
 
-// Resolve share link (public - no auth required)
-router.get("/share/:shortUrl", resolveShareLink);    // DONE
+router.post("/verify-password/:fileId", passwordRateLimit, verifyFilePassword);
 
+router.post("/verify-password/:slug", passwordRateLimit, verifyFilePassword);
 
+router.post("/guest/upload", guestUpload.array("files", 5), uploadFilesGuest);
 
-// Upload files (guest users - no auth required)
-router.post("/guest/upload", upload.array("files", 5), uploadFilesGuest);  // DONE
-
-// Get guest download info
-router.get("/guest/download-info/:shortUrl", guestDownloadInfo);           // DONE
-
-// Verify guest file password
-router.post("/guest/verify-password/:shortUrl", verifyGuestFilePassword);  // DONE
+router.get("/guest/download-info/:shortUrl", guestDownloadInfo);
+router.post("/guest/verify-password/:slug", passwordRateLimit, verifyGuestFilePassword);
 
 export default router;
+

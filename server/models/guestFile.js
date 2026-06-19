@@ -1,61 +1,117 @@
 import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcryptjs";
 
-const fileSchema = new Schema({
-  path: {
+
+const guestFileSchema = new Schema({
+  originalName: {
     type: String,
     required: true,
+    trim: true,
   },
-  name: {
+
+  mimeType: {
     type: String,
-    required: true,
   },
-  type: {
-    type: String,
-    required: true,
-  },
+
   size: {
     type: Number,
     required: true,
   },
-  downloadedContent: {
-    type: Number,
+
+  cloudinaryUrl: {
+    type: String,
     required: true,
-    default: 0,
+  },
+  cloudinaryPublicId: {
+    type: String,
+    required: true,
+  },
+  hash: {
+    type: String,
+    required: true,
+  },
+
+  ipAddress: {
+    type: String,
+    required: true,
+  },
+
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
   },
 
   isPasswordProtected: {
     type: Boolean,
     default: false,
   },
+
   password: {
-    type: String, 
-    default: null,
-  },
-
-  hasExpiry: {
-    type: Boolean,
-    default: false,
-  },
-  expiresAt: {
-    type: Date,
-    default: null,
-  },
-
-  status: {
-    type: String,
-    enum: ['active', 'expired'],
-    default: 'active',
-  },
-  shortUrl: {
     type: String,
     default: null,
+    select: false,
   },
   
-  createdBy: {
-    type: String,
+  expiresAt: {
+    type: Date,
     required: true,
   },
 
-}, { timestamps: true });
+  downloadCount: {
+    type: Number,
+    default: 0,
+  },
 
-export const GuestFile = mongoose.model("GuestFile", fileSchema);
+},
+  {
+   timestamps: true 
+  }
+);
+
+guestFileSchema.index (
+    { expiresAt: 1 },
+    { expireAfterSeconds: 0 }
+)
+
+guestFileSchema.index({ ipAddress: 1, createdAt: -1 });
+
+guestFileSchema.methods.verifyPassword = async function(candidatPassword) {
+  if (!this.isPasswordProtected ) {
+    return true;
+    if (!this.password) return false;
+  }
+
+  return await bcrypt.compare(candidatPassword, this.password);
+};
+
+guestFileSchema.methods.isExpired = function(){
+  return new Date() > this.expiresAt;
+};
+
+guestFileSchema.virtual('shareUrl').get(function() {
+  return `${process.env.BASE_URL}/f/${this.slug}`;
+});
+
+guestFileSchema.virtual('sizeFormatted').get(function() {
+  const bytes = this.size;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+});
+
+guestFileSchema.virtual('minutesRemaining').get(function() {
+  if (!this.expiresAt) return 0;
+  const remaining = this.expiresAt - new Date();
+  return Math.max(0, Math.floor(remaining / (1000 * 60)));
+});
+
+guestFileSchema.virtual('findOneAndDelete').get(function() {
+  if (docs?.cloudinaryPublicId) {
+    const {v2: cloudinary} =  import('cloudinary');
+     cloudinary.uploader.destroy(docs.cloudinaryPublicId);
+  }
+});
+export const GuestFile = mongoose.model("GuestFile", guestFileSchema);

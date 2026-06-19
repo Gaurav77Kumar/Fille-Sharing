@@ -1,85 +1,107 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { login as loginApi, logout as logoutApi, register as registerApi, getUser } from '../api/authApi';
+import {
+  login as loginApi,
+  logout as logoutApi,
+  register as registerApi,
+  getUser,
+} from '../api/authApi';
 
 const AuthContext = createContext(null);
 
+
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-    // Check if user is already logged in on mount
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                const userData = JSON.parse(storedUser);
-                setUser(userData);
-            } catch (error) {
-                localStorage.removeItem('user');
-            }
-        }
-        setLoading(false);
-    }, []);
+  const [loading, setLoading] = useState(true);
 
-    const login = async (credentials) => {
-        const response = await loginApi(credentials);
-        const userData = response.user;
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const userData = await getUser();
         setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return response;
+      } catch {
+        
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
+    checkSession();
+  }, []);
 
-    const register = async (userData) => {
-        const response = await registerApi(userData);
-        return response;
-    };
+  const login = async (credentials) => {
+    
+      const response = await loginApi(credentials);
+      setUser(response.user);
+    return response;
+  }
+  const register = async (userData) => {
+    
+      const response = await registerApi(userData);
+      return response;
+  }
 
-    const logout = async () => {
-        try {
-            await logoutApi();
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            setUser(null);
-            localStorage.removeItem('user');
-        }
-    };
+  const logout = async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      setUser(null);
+    }
+  };
 
-    const refreshUser = async () => {
-        if (user?.id) {
-            try {
-                const userData = await getUser(user.id);
-                setUser(userData);
-                localStorage.setItem('user', JSON.stringify(userData));
-            } catch (error) {
-                console.error('Failed to refresh user:', error);
-            }
-        }
-    };
+  
+  const refreshUser = async () => {
+    try {
+      const userData = await getUser();
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      if (error?.response?.status === 401) {
+        setUser(null);
+      }
+    }
+  };
 
-    const value = {
-        user,
-        login,
-        register,
-        logout,
-        refreshUser,
-        loading,
-        isAuthenticated: !!user
-    };
+  
+  const updateStorageUsed = (newStorageUsed) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return { ...prev, storageUsed: newStorageUsed };
+    });
+  };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const value = {
+    user,             
+    login,           
+    register,         
+    logout,           
+    refreshUser,     
+    updateStorageUsed,
+    loading,          
+    isAuthenticated: !!user, 
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+     
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
 
+
 export default AuthContext;
+
+
+
