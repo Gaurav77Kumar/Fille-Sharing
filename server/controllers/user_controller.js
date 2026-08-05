@@ -37,12 +37,10 @@ const registerUser = async (req, res) => {
 
     const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
     const cleanedFullname = fullname.trim().replace(/\s+/g, "").toLowerCase();
-    const username = `${cleanedFullname
-      .substring(0, 4)
-      .toLowerCase()}${nanoid(4, ALPHABET)}`;  
+    const username = `${cleanedFullname.substring(0, 4).toLowerCase()}${nanoid(4, ALPHABET)}`;  
 
-      const pic = Math.floor(Math.random() * 100)+1;
-      const profilePic = `https://avatars.dicebear.com/api/avataaars/${pic}.svg`;
+    const pic = Math.floor(Math.random() * 100)+1;
+    const profilePic = `https://avatars.dicebear.com/api/avataaars/${pic}.svg`;
 
     const newUser = new User({
       fullname,
@@ -70,6 +68,7 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
       
 // lOGIN USER
 const loginUser = async (req, res) => {

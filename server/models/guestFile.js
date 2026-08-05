@@ -22,10 +22,12 @@ const guestFileSchema = new Schema({
     type: String,
     required: true,
   },
+
   cloudinaryPublicId: {
     type: String,
     required: true,
   },
+
   hash: {
     type: String,
     required: true,
@@ -82,7 +84,6 @@ guestFileSchema.methods.verifyPassword = async function(candidatPassword) {
     return true;
     if (!this.password) return false;
   }
-
   return await bcrypt.compare(candidatPassword, this.password);
 };
 

@@ -91,7 +91,6 @@ const fileSchema = new Schema({
 );
 
 fileSchema.index({ createdBy: 1, deletedAt: 1, createdAt: -1 });
-
 fileSchema.index({ expiresAt: 1 , deletedAt: 1 });
 
 fileSchema.methods.verifyPassword = async function(candidatePassword){

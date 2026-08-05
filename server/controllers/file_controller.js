@@ -12,7 +12,6 @@ const computeHash = (buffer) => {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 };
 
-// Helper function to upload to cloudinary
 const uploadToCloudinary = (buffer, options) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
@@ -23,7 +22,6 @@ const uploadToCloudinary = (buffer, options) => {
   });
 };
 
-// Helper function to get file type category
 const getResourceType = (mimetype) => {
   if (mimetype.startsWith("image/")) return "image";
   if (mimetype.startsWith("video/")) return "video";
@@ -114,10 +112,8 @@ const uploadFiles = async (req, res) => {
         isPublic: true,
       });
 
-
       uploadedFiles.push(newFile);
       totalBytesAdded += Number(file.size);
-
     }
 
     // Step 6: Atomically update storageUsed
@@ -159,12 +155,11 @@ const downloadFile = async (req, res) => {
       await file.save();
       return res.status(403).json({ message: "File has expired" });
     }
+
     if (file.isPasswordProtected) {
       const { password } = req.body;
       if (!password) {
-        return res
-          .status(400)
-          .json({ message: "Password is required to download this file" });
+        return res.status(400).json({ message: "Password is required to download this file" });
       }
       const valid = await file.verifyPassword(password);
       if (!valid) {
@@ -192,7 +187,7 @@ const downloadFile = async (req, res) => {
   }
 };
 
-// Delete file
+
 const deleteFile = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -204,9 +199,7 @@ const deleteFile = async (req, res) => {
       return res.status(404).json({ message: "File not found" });
 
     if (file.CreatedBy.toString() !== userId && req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to delete this file" });
+      return res.status(403).json({ message: "Unauthorized to delete this file" });
     }
 
     await File.findByIdAndUpdate(fileId, { deletedAt: new Date() });
@@ -226,7 +219,7 @@ const deleteFile = async (req, res) => {
   }
 };
 
-// Update file status
+
 const updateFileStatus = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -249,14 +242,15 @@ const updateFileStatus = async (req, res) => {
         .json({ message: "Unauthorized to update this file" });
     }
 
-    await File.findByIdAndUpdate(fileId, { status });
-    res.status(200).json({ message: "File status updated", file });
+   const updatedFile =  await File.findByIdAndUpdate(fileId, { status }, { new: true });
+    res.status(200).json({ message: "File status updated", file: updatedFile });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error updating file status", error: error.message });
   }
 };
+
 
 const updateFileExpiry = async (req, res) => {
   try {
@@ -275,10 +269,10 @@ const updateFileExpiry = async (req, res) => {
         .json({ message: "Unauthorized to update this file" });
     }
 
-    await File.findByIdAndUpdate(fileId, {
+   const updatedFile =  await File.findByIdAndUpdate(fileId, {
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-    });
-    res.status(200).json({ message: "File expiry updated", file });
+    }, { new: true });
+    res.status(200).json({ message: "File expiry updated", file: updatedFile });
   } catch (error) {
     res
       .status(500)
@@ -286,7 +280,7 @@ const updateFileExpiry = async (req, res) => {
   }
 };
 
-// Update file password
+
 const updateFilePassword = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -297,6 +291,10 @@ const updateFilePassword = async (req, res) => {
 
     if (!file) {
       return res.status(404).json({ message: "File not found" });
+    }
+    
+    if(isPasswordProtected && !password) {
+      return res.status(400).json({ message: "Password is required when enabling password protection" });
     }
 
     if (file.CreatedBy.toString() !== userId && req.user.role !== "admin") {
@@ -317,7 +315,7 @@ const updateFilePassword = async (req, res) => {
   }
 };
 
-// Search files
+
 const searchFiles = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -339,7 +337,7 @@ const searchFiles = async (req, res) => {
   }
 };
 
-// Show user files (with pagination)
+
 const showUserFiles = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -376,15 +374,12 @@ const showUserFiles = async (req, res) => {
   }
 };
 
-// Get file details
+
 const getFileDetails = async (req, res) => {
   try {
     const { fileId } = req.params;
 
-    const file = await File.findById(fileId).populate(
-      "CreatedBy",
-      "fullname username email profilePic",
-    );
+    const file = await File.findById(fileId).populate("CreatedBy","fullname username email profilePic");
 
     if (!file) {
       return res.status(404).json({ message: "File not found" });
@@ -398,7 +393,7 @@ const getFileDetails = async (req, res) => {
   }
 };
 
-// Generate share shortened link
+
 const generateShareShortenLink = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -434,7 +429,7 @@ const generateShareShortenLink = async (req, res) => {
   }
 };
 
-// Send link via email
+
 const sendLinkEmail = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -474,7 +469,7 @@ const sendLinkEmail = async (req, res) => {
   }
 };
 
-// Generate QR code
+
 const generateQR = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -503,7 +498,7 @@ const generateQR = async (req, res) => {
   }
 };
 
-// Get download count
+
 const getDownloadCount = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -522,6 +517,7 @@ const getDownloadCount = async (req, res) => {
       .json({ message: "Error fetching download count", error: error.message });
   }
 };
+
 
 const resolveShareLink = async (req, res) => {
   try {
@@ -552,7 +548,7 @@ const resolveShareLink = async (req, res) => {
   }
 };
 
-// Verify file password
+
 const verifyFilePassword = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -590,7 +586,7 @@ const verifyFilePassword = async (req, res) => {
   }
 };
 
-// Get user files (simplified)
+
 const getUserFiles = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -607,7 +603,7 @@ const getUserFiles = async (req, res) => {
   }
 };
 
-// Update all file expiry
+
 const updateAllFileExpiry = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -632,7 +628,7 @@ const updateAllFileExpiry = async (req, res) => {
   }
 };
 
-// Get download info
+
 const downloadInfo = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -647,7 +643,7 @@ const downloadInfo = async (req, res) => {
       file: {
         id: file._id,
         name: file.originalName,
-        type: file.mimetype,
+        type: file.mimeType,
         size: file.size,
         downloadCount: file.downloadCount,
         isPasswordProtected: file.isPasswordProtected,
@@ -667,12 +663,11 @@ const GUEST_MAX_UPLOADS_PER_DAY = 5;
 const GUEST_MAX_FILE_SIZE = 50 * 1024 * 1024;
 const GUEST_EXPIRY_HOURS = 24;
 
-// Upload files for guest users
+
 const uploadFilesGuest = async (req, res) => {
   try {
     const files = req.files;
     const ipAddress = req.ip;
-
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: "No files uploaded" });
@@ -703,15 +698,12 @@ const uploadFilesGuest = async (req, res) => {
     const uploadedFiles = [];
 
     for (const file of files) {
-      // Hash deduplication check for guest users
       const hash = computeHash(file.buffer);
       const existing = await GuestFile.findOne({ hash });
 
       if (existing && !existing.isExpired()) {
-        // we are createing a new record with this ip and freash expiry
-        // so that each guest use cann get their own share link
-
         const slug = await generateSlug(GuestFile);
+
         const newFile = await GuestFile.create({
           originalName: existing.originalName,
           mimeType: existing.mimeType,
@@ -762,14 +754,14 @@ const uploadFilesGuest = async (req, res) => {
   }
 };
 
-// Get guest download info
+
 const guestDownloadInfo = async (req, res) => {
   try {
     const { slug } = req.params;
     const file = await GuestFile.findOne({ slug });
     if (!file) return res.status(404).json({ message: "File not found" });
     if (file.isExpired())
-      return res.status(403).json({ message: "file ahs expired" });
+      return res.status(403).json({ message: "file has expired" });
 
     res.status(200).json({
       file: {
@@ -790,7 +782,7 @@ const guestDownloadInfo = async (req, res) => {
   }
 };
 
-// Verify guest file password
+
 const verifyGuestFilePassword = async (req, res) => {
   try {
     const { slug } = req.params;
