@@ -15,8 +15,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: 
-    "https://file-sharing-rumd.vercel.app",
+    origin:"https://file-sharing-rumd.vercel.app",
     credentials: true,
   })
 );
