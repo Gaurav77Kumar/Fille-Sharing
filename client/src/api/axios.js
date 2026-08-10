@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URI,
-  withCredentials: true,
+  baseURL: 'https://fille-sharing-43kp.onrender.com/api',
+  withCCredentials: true,
 });
 
 export default API;
