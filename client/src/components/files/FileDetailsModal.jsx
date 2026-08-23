@@ -128,7 +128,7 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative glass-light rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-scale-in">
+      <div className="relative glass-light rounded-3xl shadow-2xl w-full max-w-6xl max-h-[92vh] overflow-hidden animate-scale-in">
 
         {/* Header */}
         <div className="p-6 border-b border-white/20">
@@ -138,6 +138,7 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={fileIcon.icon} />
                 </svg>
+
               </div>
               <div className="min-w-0">
                 <h2 className="text-xl font-bold text-gray-800 truncate max-w-md">

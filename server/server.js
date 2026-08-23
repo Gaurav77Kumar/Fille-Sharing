@@ -15,7 +15,7 @@ const app = express();
 
 app.use(
   cors({
-    origin:"https://fille-sharing-rumd.vercel.app",
+    origin:process.env.CLIENT_URL,
     credentials: true,
   })
 );
