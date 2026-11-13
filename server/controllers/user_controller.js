@@ -87,6 +87,11 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Google-authenticated accounts have no local password to compare
+    if (!user.password) {
+      return res.status(401).json({ message: "This account uses Google sign-in. Please continue with Google." });
+    }
+
     const isMatch = await user.comparePassword(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });

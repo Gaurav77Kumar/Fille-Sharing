@@ -12,12 +12,17 @@ import {
 } from "../controllers/user_controller.js";
 import authorizeUser from "../middleware/authorizeUser.js";
 import  authorize  from "../middleware/authorize.js";
+import { redirectToGoogle, googleCallback } from "../controllers/googleAuthController.js";
 
 const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", auth_middleware, logoutUser);
+
+// Google OAuth 2.0 (authorization code flow)
+router.get("/google", redirectToGoogle);
+router.get("/google/callback", googleCallback);
 
 router.get("/me", auth_middleware, getMe);
 

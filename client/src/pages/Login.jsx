@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Input from '../components/Input';
+import GoogleAuthButton from '../components/auth/GoogleAuthButton';
 import { useAuth } from '../context/AuthContext';
+
+const GOOGLE_ERROR_MESSAGES = {
+    google_cancelled: 'Google sign-in was cancelled.',
+    invalid_state: 'Sign-in session expired. Please try again.',
+    token_exchange_failed: 'Could not complete Google sign-in. Please try again.',
+    profile_fetch_failed: 'Could not read your Google profile. Please try again.',
+    email_not_verified: 'Your Google email is not verified.',
+    google_auth_failed: 'Google sign-in failed. Please try again.',
+};
 
 const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const [searchParams] = useSearchParams();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -13,6 +24,17 @@ const Login = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Show errors coming back from the Google OAuth callback (?error=...)
+    useEffect(() => {
+        const error = searchParams.get('error');
+        if (error) {
+            setMessage({
+                type: 'error',
+                text: GOOGLE_ERROR_MESSAGES[error] || 'Google sign-in failed. Please try again.'
+            });
+        }
+    }, [searchParams]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -166,6 +188,14 @@ const Login = () => {
                             )}
                         </button>
                     </form>
+
+                    {/* Divider + Google Sign-In */}
+                    <div className="flex items-center my-5">
+                        <div className="flex-1 h-px bg-gray-200"></div>
+                        <span className="px-3 text-xs text-gray-400 uppercase tracking-wide">or</span>
+                        <div className="flex-1 h-px bg-gray-200"></div>
+                    </div>
+                    <GoogleAuthButton />
 
                     {/* Guest Upload Link */}
                     <div className="mt-4 text-center">

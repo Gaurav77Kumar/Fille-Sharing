@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
+import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 import { register } from "../api/authApi";
 
 const Register = () => {
@@ -209,6 +210,14 @@ const Register = () => {
               )}
             </button>
           </form>
+
+          {/* Divider + Google Sign-Up */}
+          <div className="flex items-center my-5">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="px-3 text-xs text-gray-400 uppercase tracking-wide">or</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+          <GoogleAuthButton label="Sign up with Google" />
 
           {/* Navigation Link */}
           <p className="text-center mt-6 text-gray-600 animate-fade-in animation-delay-600">

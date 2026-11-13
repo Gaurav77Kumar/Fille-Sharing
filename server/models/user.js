@@ -26,9 +26,15 @@ const userSchema = new mongoose.Schema({
 
     password:{
         type: String,
-        required: true,
+        required: false,   // Google-authenticated users have no password
         minlength: 8,
         select: false  
+    },
+
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     },
 
     profilePic: {
@@ -75,7 +81,8 @@ const userSchema = new mongoose.Schema({
 );
  
 userSchema.pre('save', async function(next){
-    if(!this.isModified('password')) return next();
+    // skip hashing when there is no password (Google users) or it wasn't changed
+    if (!this.password || !this.isModified('password')) return next();
         this.password = await bcrypt.hash(this.password, 12);
     next();
 });
