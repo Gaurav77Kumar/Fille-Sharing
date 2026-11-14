@@ -67,15 +67,14 @@ router.post("/send-email/:fileId", auth_middleware, sendLinkEmail);
 router.get("/qr/:fileId", auth_middleware, generateQR);
 
 
-router.get("/share/: slug", resolveShareLink);
+
+router.get("/share/:slug", resolveShareLink);
 
 router.post("/verify-password/:fileId", passwordRateLimit, verifyFilePassword);
 
-router.post("/verify-password/:slug", passwordRateLimit, verifyFilePassword);
-
 router.post("/guest/upload", guestUpload.array("files", 5), uploadFilesGuest);
 
-router.get("/guest/download-info/:shortUrl", guestDownloadInfo);
+router.get("/guest/download-info/:slug", guestDownloadInfo);
 router.post("/guest/verify-password/:slug", passwordRateLimit, verifyGuestFilePassword);
 
 export default router;
