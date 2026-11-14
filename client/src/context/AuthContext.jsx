@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { track } from '@vercel/analytics';
 import {
   login as loginApi,
   logout as logoutApi,
@@ -39,8 +40,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (credentials) => {
-    
+
       const response = await loginApi(credentials);
+      track('Login', { method: 'email' });
       setUser(response.user);
     return response;
   }

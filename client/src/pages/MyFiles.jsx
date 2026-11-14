@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { track } from '@vercel/analytics';
 import { getMyFiles, searchFiles, deleteFile, updateFileStatus } from '../api/fileApi';
 import { useAuth } from '../context/AuthContext';
 import FileCard from '../components/files/FileCard';
@@ -88,6 +89,7 @@ const MyFiles = () => {
     setError('');
     try {
       await deleteFile(fileId);
+      track('File Deleted');
 
       const deletedFile = files.find((f) => f._id === fileId);
       setFiles((prev) => prev.filter((f) => f._id !== fileId));

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { track } from '@vercel/analytics';
 import { uploadFiles } from '../api/fileApi';
 import { useAuth } from '../context/AuthContext';
 
@@ -100,6 +101,8 @@ const Upload = () => {
 
       setUploadedFiles(response.files);
       setFiles([]);
+
+      track('Files Uploaded', { count: response.files.length });
 
       const newBytes = (response.files || [])
         .filter((f) => !f.deduplicated)

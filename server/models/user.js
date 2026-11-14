@@ -100,9 +100,9 @@ userSchema.virtual("storageUsedPercent").get(function(){
 userSchema.virtual('storageUsedFormatted').get(function(){
     const bytes = this.storageUsed;
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mb`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} Gb`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} Tb`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Kb`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mb`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} Gb`;
 })
 
 

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { track } from '@vercel/analytics';
 import { guestUpload } from '../api/fileApi';
 
 const GuestUpload = () => {
@@ -69,6 +70,8 @@ const GuestUpload = () => {
 
       setUploadedFiles(response.files);
       setFiles([]);
+
+      track('Guest Upload', { count: response.files.length });
     } catch (err) {
       const status = err?.response?.status;
 

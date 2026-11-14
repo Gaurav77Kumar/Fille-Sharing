@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { track } from "@vercel/analytics";
 import Input from "../components/Input";
 import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 import { register } from "../api/authApi";
@@ -79,6 +80,7 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
       });
+      track("Account Created");
       setMessage({
         type: "success",
         text: "Registration successful! Redirecting to login...",

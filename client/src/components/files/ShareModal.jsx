@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { track } from '@vercel/analytics';
 import {  generateQRCode, sendFileEmail } from '../../api/fileApi';
 
 const ShareModal = ({ file, onClose }) => {
@@ -16,6 +17,7 @@ const ShareModal = ({ file, onClose }) => {
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareLink);
+    track('Share Link Copied');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -43,6 +45,7 @@ const ShareModal = ({ file, onClose }) => {
     setError('');
     try {
       await sendFileEmail(file._id, email.recipient, email.message);
+      track('Share Email Queued');
       setEmailQueued(true);
       setEmail({ recipient: '', message: '' });
     } catch (err) {
