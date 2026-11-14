@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { downloadFile } from '../../api/fileApi';
 
-// Inline grid card for the My Files page.
-// NOTE: this file previously contained an accidental copy of FileDetailsModal
-// (a fullscreen modal), so every grid item rendered a modal — the "mismatched
-// UI". This is the card component My Files was meant to use. Details, security
-// and settings live in FileDetailsModal (opened via onView).
+
 
 const FileCard = ({ file, onView, onShare, onDelete }) => {
   const [loading, setLoading] = useState(false);
@@ -54,7 +50,6 @@ const FileCard = ({ file, onView, onShare, onDelete }) => {
       const link = document.createElement('a');
       link.href = response.file.cloudinaryUrl;
       link.download = response.file.originalName;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

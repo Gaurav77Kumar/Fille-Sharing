@@ -12,6 +12,16 @@ const computeHash = (buffer) => {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 };
 
+// Cloudinary serves images/videos with Content-Disposition: inline, so opening
+// the raw URL displays the file instead of downloading it. The fl_attachment
+// flag makes the browser save it under the original name. The client's
+// download attribute can't do this — it's ignored on cross-origin URLs.
+const withAttachment = (url, filename) => {
+  if (!url || !url.includes("/upload/")) return url;
+  const name = filename ? `:${encodeURIComponent(filename)}` : "";
+  return url.replace("/upload/", `/upload/fl_attachment${name}/`);
+};
+
 const uploadToCloudinary = (buffer, options) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
@@ -30,7 +40,7 @@ const getResourceType = (mimetype) => {
 };
 
 // shared with user_controller so deleteUser destroys assets with the right type
-export { getResourceType };
+export { getResourceType, withAttachment };
 
 const generateSlug = async (Model) => {
   let slug, exists;
@@ -177,7 +187,7 @@ const downloadFile = async (req, res) => {
     res.status(200).json({
       message: "File retrieved successfully",
       file: {
-        url: file.cloudinaryUrl,
+        url: withAttachment(file.cloudinaryUrl, file.originalName),
         name: file.originalName,
         mimeType: file.mimeType,
         size: file.size,
@@ -571,7 +581,7 @@ const verifyFilePassword = async (req, res) => {
     res.status(200).json({
       message: "Password verified",
       file: {
-        url: file.cloudinaryUrl,
+        url: withAttachment(file.cloudinaryUrl, file.originalName),
         name: file.originalName,
         mimeType: file.mimeType,
       },
@@ -809,7 +819,7 @@ const verifyGuestFilePassword = async (req, res) => {
     res.status(200).json({
       message: "Password verified",
       file: {
-        url: file.cloudinaryUrl,
+        url: withAttachment(file.cloudinaryUrl, file.originalName),
         name: file.originalName,
         mimeType: file.mimeType,
       },

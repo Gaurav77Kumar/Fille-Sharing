@@ -55,7 +55,6 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
       const link = document.createElement('a');
       link.href = response.file.cloudinaryUrl;
       link.download = response.file.originalName;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
