@@ -2,9 +2,6 @@ import { track } from '@vercel/analytics';
 
 const GoogleAuthButton = ({ label = "Continue with Google" }) => {
   const handleClick = () => {
-    // Full-page redirect — the browser must land on the backend so it can
-    // forward us to Google's consent screen. This cannot be an axios/XHR call.
-    // track() uses sendBeacon, so the event survives the navigation.
     track("Google Sign-In Started");
     window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
   };

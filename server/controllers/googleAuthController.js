@@ -6,6 +6,9 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 
+const GOOGLE_CALLBACK_URL = (process.env.GOOGLE_CALLBACK_URL || "").trim();
+const CLIENT_URL = (process.env.CLIENT_URL || "").trim();
+
 const TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
@@ -31,7 +34,7 @@ const redirectToGoogle = (req, res) => {
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+    redirect_uri: GOOGLE_CALLBACK_URL,
     response_type: "code",
     scope: "openid email profile",
     state,
@@ -45,7 +48,7 @@ const redirectToGoogle = (req, res) => {
 // STEP 2..5 — Google sends the user back here with ?code=...&state=...
 // GET /api/auth/google/callback
 const googleCallback = async (req, res) => {
-  const clientRedirect = (path) => res.redirect(`${process.env.CLIENT_URL}${path}`);
+  const clientRedirect = (path) => res.redirect(`${CLIENT_URL}${path}`);
 
   try {
     const { code, state } = req.query;
@@ -70,7 +73,7 @@ const googleCallback = async (req, res) => {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+        redirect_uri: GOOGLE_CALLBACK_URL,
         grant_type: "authorization_code",
       }),
     });
