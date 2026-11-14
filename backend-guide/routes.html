@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4. Routes — FileShare Backend Study Guide</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a2233; --muted:#5b6478;
+    --accent:#4f46e5; --line:#e3e6ef; --code-bg:#0d1117; --code-ink:#e6edf3;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;font-size:16px}
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(49,46,129,.97);color:#fff;padding:10px 20px;display:flex;gap:6px;align-items:center;overflow-x:auto;backdrop-filter:blur(6px)}
+  .topnav a{color:#e0e2ff;text-decoration:none;font-size:.85rem;padding:5px 12px;border-radius:8px;white-space:nowrap}
+  .topnav a:hover{background:rgba(255,255,255,.14)}
+  .topnav a.active{background:rgba(255,255,255,.22);font-weight:600}
+  .topnav .sep{color:rgba(255,255,255,.35);margin:0 4px}
+  header.hero{background:linear-gradient(135deg,#312e81 0%,#4f46e5 55%,#6d28d9 100%);color:#fff;padding:44px 24px 38px;text-align:center}
+  header.hero h1{margin:0 0 8px;font-size:2rem;letter-spacing:-.4px}
+  header.hero p{margin:0 auto;max-width:760px;opacity:.92}
+  main{max-width:980px;margin:0 auto;padding:34px 20px 90px}
+  .concept{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;margin-bottom:36px}
+  .concept h2{margin:0 0 14px;font-size:1.35rem}
+  .concept p{margin:10px 0;color:#2a3247}
+  .concept code, p code, li code, td code, .explain code{background:#eef0ff;border:1px solid #dcdcf5;border-radius:5px;padding:1px 6px;font-family:Consolas,'Courier New',monospace;font-size:.86em;color:#3b3690}
+  .ascii{background:#10152b;color:#c3d0ff;font-family:Consolas,monospace;font-size:.85rem;line-height:1.45;padding:18px 22px;border-radius:10px;overflow-x:auto;white-space:pre;margin:14px 0}
+  article.file{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 34px;margin-bottom:44px}
+  .file-head{border-bottom:2px solid var(--line);padding-bottom:16px;margin-bottom:18px}
+  .file-head .path{font-family:Consolas,monospace;color:var(--accent);font-size:1.02rem;font-weight:600}
+  .file-head h2{margin:6px 0 8px;font-size:1.55rem}
+  .file-head .role{color:var(--muted);margin:0}
+  .file-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .file-meta span{background:#eef0ff;color:#3b3690;border-radius:999px;padding:3px 12px;font-size:.8rem;font-weight:600}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+  .toc a{background:#f0f1fa;border:1px solid var(--line);color:#3b3690;text-decoration:none;font-size:.82rem;padding:4px 12px;border-radius:999px}
+  .toc a:hover{background:#e3e5fb}
+  details.fullcode{margin:18px 0 26px;border:1px solid #d6dae9;border-radius:10px;overflow:hidden}
+  details.fullcode summary{cursor:pointer;background:#eef0f8;padding:10px 16px;font-weight:600;color:#333c5e;font-size:.92rem;user-select:none}
+  details.fullcode summary:hover{background:#e5e7f5}
+  pre.codeview{margin:0;background:var(--code-bg);max-height:520px;overflow:auto;font-size:.84rem}
+  .ln{display:flex}
+  .ln:hover{background:#161b27}
+  .ln-num{flex:0 0 52px;text-align:right;padding:1px 12px 1px 0;color:#4a5468;font-family:Consolas,monospace;user-select:none}
+  .ln-code{padding:1px 16px 1px 0;white-space:pre;font-family:Consolas,monospace;color:var(--code-ink)}
+  .k{color:#ff7b72}.s{color:#a5d6ff}.c{color:#8b949e;font-style:italic}.n{color:#79c0ff}.f{color:#d2a8ff}
+  .step{border-top:1px dashed var(--line);padding:22px 0 8px;margin-top:12px}
+  .step:first-of-type{border-top:none}
+  .step-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .step-lines{background:#312e81;color:#fff;border-radius:6px;padding:2px 10px;font-size:.75rem;font-family:Consolas,monospace}
+  .step-title{font-weight:700;font-size:1.06rem}
+  pre.snippet{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:12px 16px;font-family:Consolas,monospace;font-size:.86rem;overflow-x:auto;white-space:pre;margin:10px 0 14px}
+  pre.snippet .k{color:#ff7b72}.snippet .s{color:#a5d6ff}.snippet .c{color:#8b949e;font-style:italic}.snippet .n{color:#79c0ff}.snippet .f{color:#d2a8ff}
+  .box{border-radius:10px;padding:12px 16px 12px 18px;margin:10px 0;font-size:.95rem;border:1px solid;position:relative}
+  .box b.lbl{display:block;font-size:.72rem;letter-spacing:1.1px;text-transform:uppercase;margin-bottom:3px}
+  .what{background:#eff6ff;border-color:#bfdbfe}.what b.lbl{color:#1d4ed8}
+  .why{background:#f0fdf4;border-color:#bbf7d0}.why b.lbl{color:#15803d}
+  .how{background:#faf5ff;border-color:#e9d5ff}.how b.lbl{color:#7e22ce}
+  .interview{background:#fffbeb;border-color:#fde68a}.interview b.lbl{color:#b45309}
+  .bug{background:#fef2f2;border-color:#fecaca}.bug b.lbl{color:#b91c1c}
+  .note{background:#f8fafc;border-color:#e2e8f0;color:#475569}.note b.lbl{color:#475569}
+  .qa{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 24px;margin:14px 0}
+  .qa p{margin:8px 0;color:#2a3247}
+  .qa h3{margin:0 0 8px;font-size:1.08rem}
+  .pager{display:flex;justify-content:space-between;margin-top:50px}
+  .pager a{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 20px;text-decoration:none;color:var(--accent);font-weight:600}
+  .pager a:hover{background:#eef0ff}
+  footer{text-align:center;color:var(--muted);font-size:.82rem;padding:26px 0;border-top:1px solid var(--line)}
+  table.opt{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem}
+  table.opt th{background:#eef0f8;text-align:left;padding:8px 12px;border:1px solid var(--line)}
+  table.opt td{padding:8px 12px;border:1px solid var(--line);vertical-align:top}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Index</a><span class="sep">›</span>
+  <a href="models.html">1 · Models</a>
+  <a href="middleware.html">2 · Middleware</a>
+  <a href="controllers.html">3 · Controllers</a>
+  <a href="routes.html" class="active">4 · Routes</a>
+  <a href="config.html">5 · Config</a>
+  <a href="queues.html">6 · Queues</a>
+</nav>
+
+<header class="hero">
+  <h1>4 · Routes — The API Surface</h1>
+  <p>Every line of <code style="background:rgba(255,255,255,.15);color:#fff">user_routes.js</code> and <code style="background:rgba(255,255,255,.15);color:#fff">file_routes.js</code> — where URLs, middleware chains, and controllers get wired together. Small files, big lessons: ordering, rate limiting, and a famous space bug.</p>
+</header>
+
+<main>
+
+<!-- ===================== CONCEPT ===================== -->
+<section class="concept">
+  <h2>Before line 1: how routing works in Express</h2>
+  <p>A <strong>router</strong> is a mini-app: it holds a list of route rules and matches incoming requests against them — <strong>method + path</strong> first, then in registration order. The first matching rule wins and its chain runs; nothing after it does.</p>
+  <div class="ascii">  server.js:   app.use("/api/auth", userRoutes);   ← mounts the router under a prefix
+               app.use("/api/files", fileRoutes);
+
+  so inside userRoutes:   router.post("/login", …)
+       …really means:     POST /api/auth/login</div>
+  <p><strong>The route chain is middleware composition.</strong> A rule like:</p>
+  <div class="ascii">  router.get("/users", auth_middleware, authorize("admin"), getUsers);</div>
+  <p>builds a conveyor belt: <code>auth_middleware</code> (verify token, attach <code>req.user</code>) → <code>authorize("admin")</code> (role check) → <code>getUsers</code> (business logic). Any link can terminate with a response; the controller at the end is just "the last middleware".</p>
+  <p><strong>Reading a routes file = reading the API's public contract:</strong> every line answers "what can the outside world do, and what does it cost (auth? rate limit?) to do it?"</p>
+</section>
+
+<!-- ===================== USER_ROUTES.JS ===================== -->
+<article class="file" id="userroutes">
+  <div class="file-head">
+    <div class="path">server/routes/user_routes.js</div>
+    <h2>The auth + user routes</h2>
+    <p class="role">Register, login, logout, the /me session check, the two Google OAuth endpoints, and admin-guarded user management.</p>
+    <div class="file-meta">
+      <span>~35 lines</span><span>9 routes</span><span>guard sandwich</span><span>2 OAuth endpoints</span>
+    </div>
+    <div class="toc">
+      <a href="#ur-full">Full walkthrough</a><a href="#ur-sandwich">The guard sandwich</a>
+    </div>
+  </div>
+
+  <details class="fullcode" open>
+    <summary>📄 Full source — server/routes/user_routes.js</summary>
+    <pre class="codeview" data-src="src-userroutes"></pre>
+  </details>
+  <script type="text/plain" id="src-userroutes">
+import express from "express";
+import auth_middleware from "../middleware/auth_middleware.js";
+import {
+    registerUser,
+    loginUser,
+    logoutUser,
+    getUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
+    getMe,
+} from "../controllers/user_controller.js";
+import authorizeUser from "../middleware/authorizeUser.js";
+import  authorize  from "../middleware/authorize.js";
+import { redirectToGoogle, googleCallback } from "../controllers/googleAuthController.js";
+
+const router = express.Router();
+
+router.post("/register", registerUser);
+router.post("/login", loginUser);
+router.post("/logout", auth_middleware, logoutUser);
+
+// Google OAuth 2.0 (authorization code flow)
+router.get("/google", redirectToGoogle);
+router.get("/google/callback", googleCallback);
+
+router.get("/me", auth_middleware, getMe);
+
+router.get("/users", auth_middleware, authorize("admin"), getUsers);
+
+router.get("/users/:userId", auth_middleware, authorizeUser, getUserById);
+router.patch("/users/:userId", auth_middleware, authorizeUser, updateUser);
+router.delete("/users/:userId", auth_middleware, authorizeUser, deleteUser);
+
+export default router;
+  </script>
+
+  <h2 style="margin-top:10px">Walkthrough — every line</h2>
+
+  <div class="step" id="ur-full">
+    <div class="step-head"><span class="step-lines">lines 1–20</span><span class="step-title">Imports + the router + the public trio</span></div>
+<pre class="snippet"><span class="k">const</span> router = express.<span class="f">Router</span>();
+
+router.<span class="f">post</span>(<span class="s">"/register"</span>, registerUser);
+router.<span class="f">post</span>(<span class="s">"/login"</span>, loginUser);
+router.<span class="f">post</span>(<span class="s">"/logout"</span>, auth_middleware, logoutUser);</pre>
+    <div class="box what"><b class="lbl">What is it</b><code>express.Router()</code> creates the mountable mini-app; every rule below is relative to <code>/api/auth</code> (from server.js). The first two routes have <strong>no middleware</strong> — deliberately: you can't already be authenticated when registering or logging in. Logout, by contrast, runs <code>auth_middleware</code> first — it validates the token before clearing the cookie, so the endpoint doubles as an "am I really logged in?" check and a logout with a garbage cookie cleanly 401s.</div>
+    <div class="box why"><b class="lbl">Why POST for register/login/logout</b>REST semantics: these are <em>actions</em>, not resource reads — they change state (create a user, issue a cookie, delete a cookie). Browsers and caches treat GET as safe/idempotent; anything with side effects belongs in POST. The Google endpoints below are GETs — correctly, because they're <strong>navigations</strong> (the browser must follow redirects to Google and back; an XHR can't do that).</div>
+<pre class="snippet">router.<span class="f">get</span>(<span class="s">"/google"</span>, redirectToGoogle);
+router.<span class="f">get</span>(<span class="s">"/google/callback"</span>, googleCallback);
+router.<span class="f">get</span>(<span class="s">"/me"</span>, auth_middleware, getMe);</pre>
+    <div class="box how"><b class="lbl">How the OAuth pair wires up</b><code>/google</code> is the button's target: it 302s to Google's consent screen. <code>/google/callback</code> is the <code>redirect_uri</code> registered in Google Cloud Console — Google hard-codes its return trip here, with <code>?code=…&state=…</code>. Both are <strong>public</strong> — no auth middleware, obviously: you can't be logged in yet; the entire point is to become logged in. And <code>/me</code> is the session-check endpoint the frontend calls on every load — cookie in, user object out.</div>
+<pre class="snippet">router.<span class="f">get</span>(<span class="s">"/users"</span>, auth_middleware, authorize(<span class="s">"admin"</span>), getUsers);
+router.<span class="f">get</span>(<span class="s">"/users/:userId"</span>, auth_middleware, authorizeUser, getUserById);
+router.<span class="f">patch</span>(<span class="s">"/users/:userId"</span>, auth_middleware, authorizeUser, updateUser);
+router.<span class="f">delete</span>(<span class="s">"/users/:userId"</span>, auth_middleware, authorizeUser, deleteUser);</pre>
+    <div class="box why"><b class="lbl">Why two different guards on sibling routes</b>The four-line contrast worth reciting: <code>/users</code> (list everyone) is <strong>admin-only</strong> — <code>authorize("admin")</code> checks <em>what kind</em> of user you are. The <code>/users/:userId</code> trio is <strong>self-or-admin</strong> — <code>authorizeUser</code> checks <em>whose row</em> you're touching. Route-level (role) vs object-level (ownership) authorization, expressed as two middleware on neighboring lines. And the method spread — GET/PATCH/DELETE on the same path — is REST in miniature: same resource, different verbs, different powers.</div>
+    <div class="box note"><b class="lbl">Also notice</b><code>PATCH</code> for partial updates (send only changed fields) vs <code>PUT</code> (full replacement) — this API correctly chose PATCH since updateUser accepts any subset. And no <code>POST /users</code> exists — creation happens via <code>/register</code>, which is the right call (one public path into the users collection).</div>
+  </div>
+
+  <div class="step" id="ur-sandwich">
+    <div class="step-head"><span class="step-lines">pattern</span><span class="step-title">The guard sandwich — the recurring shape</span></div>
+<pre class="snippet">router.<span class="f">get</span>(<span class="s">"/me"</span>, auth_middleware, getMe);</pre>
+    <div class="box why"><b class="lbl">Why it matters</b>Read every line of this file as: <em>[who may call this?] + [what runs]</em>. Zero guards = public. One guard = authenticated. Two guards = authenticated AND authorized. The chain <em>is</em> the access-control policy, visible at a glance — no policy hidden inside controllers (though updateUser/deleteUser re-check ownership defensively — belt and suspenders). If an interviewer asks "where is your authorization logic?", the honest answer is "mostly in the route declarations; duplicated defensively in two handlers."</div>
+  </div>
+</article>
+
+<!-- ===================== FILE_ROUTES.JS ===================== -->
+<article class="file" id="fileroutes">
+  <div class="file-head">
+    <div class="path">server/routes/file_routes.js</div>
+    <h2>The file routes</h2>
+    <p class="role">The complete file API: uploads with per-endpoint Multer configs, CRUD, sharing, password verification behind a rate limit, and the public guest endpoints.</p>
+    <div class="file-meta">
+      <span>~83 lines</span><span>20 routes</span><span>2 multer instances</span><span>1 rate limiter</span><span>3 real bugs</span>
+    </div>
+    <div class="toc">
+      <a href="#fr-guestmulter">The guest multer</a><a href="#fr-ratelimit">The rate limiter</a><a href="#fr-table">The route table</a><a href="#fr-bugs">The space bug (proven)</a><a href="#fr-others">Two more bugs</a>
+    </div>
+  </div>
+
+  <details class="fullcode" open>
+    <summary>📄 Full source — server/routes/file_routes.js</summary>
+    <pre class="codeview" data-src="src-fileroutes"></pre>
+  </details>
+  <script type="text/plain" id="src-fileroutes">
+import express from "express";
+import auth_middleware from "../middleware/auth_middleware.js";
+import { upload } from "../middleware/multer.js";
+import multer from "multer";
+import rateLimit from "express-rate-limit";
+import {
+    uploadFiles,
+    downloadFile,
+    deleteFile,
+    updateFileStatus,
+    updateFileExpiry,
+    updateFilePassword,
+    searchFiles,
+    showUserFiles,
+    getFileDetails,
+    generateShareShortenLink,
+    sendLinkEmail,
+    generateQR,
+    getDownloadCount,
+    resolveShareLink,
+    verifyFilePassword,
+    getUserFiles,
+    updateAllFileExpiry,
+    downloadInfo,
+    uploadFilesGuest,
+    guestDownloadInfo,
+    verifyGuestFilePassword,
+} from "../controllers/file_controller.js";
+
+
+const guestUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024, files: 3},
+    fileFilter: (req, file, cb) => {
+        const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'];
+        ALLOWED.includes(file.mimetype) ? cb(null, true) : cb(new Error("Only JPEG, PNG, PDF, and TXT files are allowed"));
+    }
+})
+
+// Rate limiter - brute force protection for password verify
+const passwordRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, 
+    message: { message: "Too many attempts, please try again later"},
+    standardHeaders: true,
+})
+
+const router = express.Router();
+
+router.post("/upload", auth_middleware, upload.array("files", 10), uploadFiles);
+router.get("/my-files",  auth_middleware,  showUserFiles);
+router.get("/search",    auth_middleware,  searchFiles);
+
+router.get("/details/:fileId",   auth_middleware,   getFileDetails);
+router.get("/download-info/:fileId", auth_middleware, downloadInfo);
+router.get("/download/:fileId", auth_middleware, downloadFile);
+router.get("/download-count/:fileId", auth_middleware, getDownloadCount);
+
+router.delete("/delete/:fileId", auth_middleware, deleteFile);
+router.patch("/status/:fileId", auth_middleware, updateFileStatus);
+router.patch("/expiry/:fileId", auth_middleware, updateFileExpiry);
+router.patch("/password/:fileId", auth_middleware, updateFilePassword);
+router.patch("/expiry-all", auth_middleware, updateAllFileExpiry);
+
+router.get("/share-link/:fileId", auth_middleware, generateShareShortenLink);
+router.post("/send-email/:fileId", auth_middleware, sendLinkEmail);
+router.get("/qr/:fileId", auth_middleware, generateQR);
+
+
+router.get("/share/: slug", resolveShareLink);
+
+router.post("/verify-password/:fileId", passwordRateLimit, verifyFilePassword);
+
+router.post("/verify-password/:slug", passwordRateLimit, verifyFilePassword);
+
+router.post("/guest/upload", guestUpload.array("files", 5), uploadFilesGuest);
+
+router.get("/guest/download-info/:shortUrl", guestDownloadInfo);
+router.post("/guest/verify-password/:slug", passwordRateLimit, verifyGuestFilePassword);
+
+export default router;
+  </script>
+
+  <h2 style="margin-top:10px">Walkthrough — every line</h2>
+
+  <div class="step" id="fr-guestmulter">
+    <div class="step-head"><span class="step-lines">lines 31–38</span><span class="step-title">guestUpload — a second, stricter Multer instance</span></div>
+<pre class="snippet"><span class="k">const</span> guestUpload = <span class="f">multer</span>({
+    storage: multer.<span class="f">memoryStorage</span>(),
+    limits: { fileSize: <span class="n">25</span> * <span class="n">1024</span> * <span class="n">1024</span>, files: <span class="n">3</span>},
+    fileFilter: (req, file, cb) =&gt; {
+        <span class="k">const</span> ALLOWED = [<span class="s">'image/jpeg'</span>, <span class="s">'image/png'</span>, <span class="s">'application/pdf'</span>, <span class="s">'text/plain'</span>];
+        ALLOWED.<span class="f">includes</span>(file.mimetype) ? <span class="f">cb</span>(<span class="k">null</span>, <span class="k">true</span>) : <span class="f">cb</span>(<span class="k">new</span> Error(<span class="s">"Only JPEG, PNG, PDF, and TXT…"</span>));
+    }
+})</pre>
+    <div class="box why"><b class="lbl">Why a second instance instead of reusing <code>upload</code></b>Guest uploads are the abuse surface — anonymous users, no quota, no account. So the policy tightens: 25MB (half the registered cap), fewer files, and a <strong>four-type whitelist</strong> (images/PDF/text — no audio/video) versus the registered fifteen. Same library, different policy object — the multer-as-config pattern again. The ternary in the filter is the compact form of the registered version's if/else; same semantics.</div>
+    <div class="box note"><b class="lbl">Found while reading — three drift points</b>(1) <code>limits: { files: 3 }</code> but the route calls <code>guestUpload.array("files", 5)</code> — Multer's route-level cap (5) overrides/behaves inconsistently with the instance cap (3); the README claims 3. Drift in three places — the instance config wins on size, the route wins on count. (2) The controller's own <code>GUEST_MAX_FILE_SIZE = 50MB</code> re-check is dormant — Multer rejects at 25MB long before. (3) No <code>storage</code> override would have been needed anyway (multer defaults to memory), but declaring it explicitly documents intent. Three sources of truth for one policy = the textbook case for extracting guest limits to one constants module.</div>
+  </div>
+
+  <div class="step" id="fr-ratelimit">
+    <div class="step-head"><span class="step-lines">lines 40–46</span><span class="step-title">passwordRateLimit — brute-force protection</span></div>
+<pre class="snippet"><span class="k">const</span> passwordRateLimit = <span class="f">rateLimit</span>({
+    windowMs: <span class="n">15</span> * <span class="n">60</span> * <span class="n">1000</span>,   <span class="c">// 15 minutes</span>
+    max: <span class="n">10</span>,                     <span class="c">// 10 attempts per window per IP</span>
+    message: { message: <span class="s">"Too many attempts, please try again later"</span>},
+    standardHeaders: <span class="k">true</span>,       <span class="c">// RateLimit-* headers for clients</span>
+})</pre>
+    <div class="box what"><b class="lbl">What is it</b>An <code>express-rate-limit</code> middleware — the factory pattern again (configure → returns middleware). Per client IP, it allows <strong>10 password verifications per 15-minute sliding window</strong>; attempt 11 gets the JSON message with <code>429</code>. <code>standardHeaders</code> adds <code>RateLimit-Limit/Remaining/Reset</code> headers so well-behaved clients can self-throttle.</div>
+    <div class="box why"><b class="lbl">Why it's attached exactly where it is</b>It's mounted on the three <code>verify-password</code> routes — the only endpoints where an attacker can <em>test guesses against a secret</em>. Brute-forcing a bcrypt-protected file password is hopeless if you get 10 tries per quarter hour: 4 guesses/hour vs bcrypt's own slowness. Note the honest limitation: the default store is <strong>in-memory per process</strong> — restarts wipe counts, and horizontal scaling (multiple instances behind a load balancer) gives attackers N× the budget. The production answer: a Redis store (<code>rate-limit-redis</code>) shared across instances — which this app conveniently already runs.</div>
+    <div class="box interview"><b class="lbl">Interview soundbite</b>"Public password checks get two layers: bcrypt makes each guess expensive, the rate limiter makes guessing <em>slow</em> — 10 per 15 minutes per IP. And I know its default store is per-process memory, so multi-instance deployments need the Redis store."</div>
+  </div>
+
+  <div class="step" id="fr-table">
+    <div class="step-head"><span class="step-lines">lines 48–79</span><span class="step-title">The route table — every rule</span></div>
+<pre class="snippet">router.<span class="f">post</span>(<span class="s">"/upload"</span>, auth_middleware, upload.<span class="f">array</span>(<span class="s">"files"</span>, <span class="n">10</span>), uploadFiles);
+router.<span class="f">get</span>(<span class="s">"/my-files"</span>, auth_middleware, showUserFiles);
+…
+router.<span class="f">get</span>(<span class="s">"/share/: slug"</span>, resolveShareLink);</pre>
+    <div class="box how"><b class="lbl">How to read the four groups</b>
+      <table class="opt">
+        <tr><th>Group</th><th>Routes</th><th>Pattern to notice</th></tr>
+        <tr><td>Core file ops</td><td><code>/upload</code>, <code>/my-files</code>, <code>/search</code></td><td>Upload chains <em>three</em> middlewares: auth → multer → controller. Multer sits <strong>after</strong> auth (why parse 50MB for a request that would 401?) and <strong>before</strong> the controller (bytes must exist when it runs) — middleware order is load-order engineering.</td></tr>
+        <tr><td>Reads & analytics</td><td><code>/details/:fileId</code>, <code>/download-info/:fileId</code>, <code>/download/:fileId</code>, <code>/download-count/:fileId</code></td><td>All auth'd — reads are still user-scoped. <code>download-info</code> vs <code>download</code> split: lightweight metadata page-load vs actual gated retrieval.</td></tr>
+        <tr><td>Mutations</td><td><code>DELETE /delete/:fileId</code>, <code>PATCH /status|expiry|password/:fileId</code>, <code>PATCH /expiry-all</code></td><td>One mutation per endpoint (REST-ish action naming). Note <code>/expiry-all</code> is a PATCH on a collection, not an item.</td></tr>
+        <tr><td>Sharing</td><td><code>/share-link/:fileId</code>, <code>/send-email/:fileId</code>, <code>/qr/:fileId</code></td><td>Owner-only conveniences; the <em>public</em> consumption side lives in the next group.</td></tr>
+        <tr><td>Public surface</td><td><code>/share/: slug</code> (broken), <code>/verify-password/:fileId</code>, <code>/verify-password/:slug</code>, <code>/guest/*</code></td><td><strong>No auth middleware — by design.</strong> These are what a stranger with a link can touch. This is exactly why the password-verify trio gets the rate limiter and the guest upload gets its own multer.</td></tr>
+      </table>
+      The upload route is worth reciting in interviews: <code>auth_middleware → upload.array → uploadFiles</code> — "verify identity before paying the parse cost, parse bytes before the handler needs them."</div>
+  </div>
+
+  <div class="step" id="fr-bugs">
+    <div class="step-head"><span class="step-lines">line 70</span><span class="step-title">The space bug — proven with a live test</span></div>
+<pre class="snippet">router.<span class="f">get</span>(<span class="s">"/share/: slug"</span>, resolveShareLink);
+<span class="c">//                          ↑ a SPACE inside the param name</span></pre>
+    <div class="box bug"><b class="lbl">Found while reading — and reproduced</b>This was verified by running a minimal Express app with this exact route against the server's own Express install:<br>
+      <code>app.get('/share/: slug', …) → registered: true → GET /share/abc123 → <strong>404</strong></code><br>
+      Express accepts the route definition without complaint, but the route <strong>never matches any real request</strong> — the parameter name is parsed with the space and real URLs don't match. Net effect in production: <code>GET /api/files/share/&lt;slug&gt;</code> — the endpoint the React shared-file page calls — <strong>always 404s</strong>. Combined with the phantom <code>shortUrl</code> field (controllers page), the registered-file sharing flow is broken end-to-end, invisibly: every piece returns a well-formed response or a clean 404, never a crash. Fix: <code>"/share/:slug"</code> — delete the space. This is the single most quotable finding in the project: "a one-character bug that silently disabled a feature, found by reading and proven with a two-line test."</div>
+  </div>
+
+  <div class="step" id="fr-others">
+    <div class="step-head"><span class="step-lines">lines 72–78</span><span class="step-title">Duplicate routes + the param-name mismatch</span></div>
+<pre class="snippet">router.<span class="f">post</span>(<span class="s">"/verify-password/:fileId"</span>, passwordRateLimit, verifyFilePassword);
+router.<span class="f">post</span>(<span class="s">"/verify-password/:slug"</span>, passwordRateLimit, verifyFilePassword);
+…
+router.<span class="f">get</span>(<span class="s">"/guest/download-info/:shortUrl"</span>, guestDownloadInfo);</pre>
+    <div class="box how"><b class="lbl">How duplicate paths resolve</b>Express matches in registration order: <code>/verify-password/abc123</code> hits the <strong>first</strong> rule, binding the value to <code>req.params.fileId</code> — and the handler reads <code>req.params.fileId</code>, so it works. The second rule is dead code: identical pattern (same URL shape — the param <em>name</em> doesn't change matching), never reached. It reveals intent drift: someone planned slug-based verification (matching <code>resolveShareLink</code>'s slug world) and left both. Since the handler only knows <code>fileId</code>, the slug variant could never have worked without rewriting the handler anyway.</div>
+    <div class="box bug"><b class="lbl">Found while reading — the guest 404 machine</b>The route binds <code>:shortUrl</code>; the controller destructures <code>{ slug } = req.params</code> → <code>slug</code> is <code>undefined</code> → <code>GuestFile.findOne({slug: undefined})</code> matches nothing → <strong>every guest download-info request 404s</strong>. The guest share page can never display file metadata in production. One-word fix: rename the param to <code>:slug</code>. Route names and controller destructuring are a <em>contract</em> — nothing checks it for you.</div>
+    <div class="box note"><b class="lbl">Also notice</b><code>/guest/upload</code> has no rate-limit middleware — its abuse protection is the <em>controller's DB-backed</em> count (5/24h per IP), not express-rate-limit. Two rate-limiting mechanisms in one app, chosen per-context: memory-based for request-flood protection (password guesses), DB-backed for identity-less budget enforcement (guest uploads). Being able to explain when each fits is a genuinely senior answer.</div>
+  </div>
+</article>
+
+<!-- ===================== QUIZ ===================== -->
+<section class="concept" id="quiz">
+  <h2>Interview questions this folder invites</h2>
+
+  <div class="qa">
+    <h3 class="q">"How does Express decide which route handles a request?"</h3>
+    <p class="a">"Method + path match, then registration order — first match wins and later rules never run. That's why my two /verify-password routes behave the way they do: the :fileId one always wins, and the :slug one is unreachable. Route order is behavior."</p>
+  </div>
+
+  <div class="qa">
+    <h3 class="q">"Why is Multer after auth but before the controller on /upload?"</h3>
+    <p class="a">"Cost and dependency ordering: auth is a cheap string verification — reject unauthenticated uploads before paying to parse megabytes. And the controller needs req.files to exist, so parsing must finish first. Middleware order is both a security and a performance decision."</p>
+  </div>
+
+  <div class="qa">
+    <h3 class="q">"How do you protect a public password-check endpoint from brute force?"</h3>
+    <p class="a">"Two layers: bcrypt cost (each guess is CPU-expensive) plus express-rate-limit at 10 attempts per 15 minutes per IP with standard headers. And I know the default store is in-memory per process — for multi-instance production I'd swap in the Redis store, which my stack already has."</p>
+  </div>
+
+  <div class="qa">
+    <h3 class="q">"Tell me about a bug you found in your own code."</h3>
+    <p class="a">"My favorite: <code>router.get('/share/: slug', …)</code> — a space inside the parameter name. Express registers the route happily but it never matches a single request; I reproduced it with a two-line test against my own Express install and got a 404. A one-character bug that silently disabled the whole share page — which is exactly why I now read routes and controllers as a matched contract."</p>
+  </div>
+
+  <div class="qa">
+    <h3 class="q">"Where is authorization enforced in your API?"</h3>
+    <p class="a">"Structurally, in the route declarations — each line declares its own guards, from none (public guest endpoints) to auth-only to auth+admin. Object-level checks (whose file?) live in authorizeUser middleware for /users/:userId and are re-checked defensively inside file handlers. The route file reads as the API's access-control policy."</p>
+  </div>
+</section>
+
+<div class="pager">
+  <a href="controllers.html">← 3 · Controllers</a>
+  <a href="config.html">Next: 5 · Config →</a>
+</div>
+
+</main>
+
+<footer>FileShare backend study guide · routes · every line explained</footer>
+
+<script>
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hl(line){
+  const re=/(\/\/.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\[^`])*`)|\b(import|from|export|default|const|let|var|new|return|if|else|await|async|function|this|true|false|null|undefined|typeof|do|while|for|of|in|class|extends|try|catch|throw|switch|case|break|continue)\b|(\b\d[\d_]*(?:\.\d+)?\b)/g;
+  let out='',last=0,m;
+  while((m=re.exec(line))!==null){
+    out+=esc(line.slice(last,m.index));
+    if(m[1])out+='<span class="c">'+esc(m[1])+'</span>';
+    else if(m[2])out+='<span class="s">'+esc(m[2])+'</span>';
+    else if(m[3])out+='<span class="k">'+esc(m[3])+'</span>';
+    else if(m[4])out+='<span class="n">'+esc(m[4])+'</span>';
+    last=m.index+m[0].length;
+  }
+  out+=esc(line.slice(last));
+  return out;
+}
+document.querySelectorAll('pre.codeview').forEach(function(pre){
+  var holder=document.getElementById(pre.dataset.src);
+  if(!holder)return;
+  var raw=holder.textContent.replace(/^\n/,'').replace(/\s+$/,'');
+  var lines=raw.split('\n');
+  var html='';
+  lines.forEach(function(l,idx){
+    html+='<div class="ln"><span class="ln-num">'+(idx+1)+'</span><span class="ln-code">'+hl(l)+'</span></div>';
+  });
+  pre.innerHTML='<div>'+html+'</div>';
+});
+</script>
+
+</body>
+</html>

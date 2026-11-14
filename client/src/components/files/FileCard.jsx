@@ -48,7 +48,9 @@ const FileCard = ({ file, onView, onShare, onDelete }) => {
     try {
       const response = await downloadFile(file._id);
       const link = document.createElement('a');
-      link.href = response.file.cloudinaryUrl;
+      // backend puts the (attachment-ready) download URL under `url` — reading
+      // `cloudinaryUrl` here was undefined, so the SPA rewrite served index.html
+      link.href = response.file.url;
       // backend returns the filename as `name`; the fl_attachment flag in the
       // URL is what actually names the saved file (download attr is ignored
       // on cross-origin URLs)

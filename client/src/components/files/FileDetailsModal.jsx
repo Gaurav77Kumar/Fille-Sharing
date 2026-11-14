@@ -53,7 +53,8 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
     try {
       const response = await downloadFile(file._id);
       const link = document.createElement('a');
-      link.href = response.file.cloudinaryUrl;
+      // backend puts the (attachment-ready) download URL under `url`
+      link.href = response.file.url;
       // backend returns the filename as `name` (see FileCard note)
       link.download = response.file.name;
       document.body.appendChild(link);

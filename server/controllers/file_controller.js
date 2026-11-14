@@ -39,6 +39,11 @@ const getResourceType = (mimetype) => {
   return "raw";
 };
 
+const getFileExtension = (filename) => {
+  const match = filename.match(/\.([a-zA-Z0-9]+)$/);
+  return match ? match[1].toLowerCase() : "";
+};
+
 // shared with user_controller so deleteUser destroys assets with the right type
 export { getResourceType, withAttachment };
 
@@ -102,11 +107,18 @@ const uploadFiles = async (req, res) => {
 
       // Step 3: Upload to cloudinary and create new files record
       const resourceType = getResourceType(file.mimetype);
+      // strip the extension, then keep only URL-safe chars — Cloudinary
+      // rejects public_ids with parentheses/spaces/special characters,
+      // which is a common reason PDFs (e.g. "Resume (2024).pdf") fail
+      const safeName = file.originalname
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9-_]/g, "_");
       const result = await uploadToCloudinary(file.buffer, {
         resource_type: resourceType,
         folder: `file-sharing/${userId}`,
-        public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, "").replace(/\s/g, '_')}`
-
+        // raw assets (pdf/zip/doc) keep their extension in the public_id so
+        // they deliver correctly; images get the format appended by Cloudinary
+        public_id: `${Date.now()}-${safeName}${resourceType === "raw" ? `.${getFileExtension(file.originalname)}` : ""}`,
       });
 
       // Step 4: Generate collision safe slug for the share URL
@@ -143,6 +155,8 @@ const uploadFiles = async (req, res) => {
       files: uploadedFiles,
     });
   } catch (error) {
+    // surface the real cause in Render logs — Cloudinary errors were invisible here
+    console.error("[uploadFiles] failed:", error?.message, error?.http_code || "");
     res
       .status(500)
       .json({ message: "Error uploading files", error: error.message });
