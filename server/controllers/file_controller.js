@@ -14,12 +14,17 @@ const computeHash = (buffer) => {
 
 // Cloudinary serves images/videos with Content-Disposition: inline, so opening
 // the raw URL displays the file instead of downloading it. The fl_attachment
-// flag makes the browser save it under the original name. The client's
-// download attribute can't do this — it's ignored on cross-origin URLs.
-const withAttachment = (url, filename) => {
+// flag makes the browser save it instead. The client's download attribute
+// can't do this — it's ignored on cross-origin URLs.
+//
+// NOTE: the custom-name variant (fl_attachment:<filename>) is deliberately NOT
+// used — a filename containing a dot (every .png/.pdf!) makes Cloudinary split
+// it into transformation tokens and reject the URL with
+// "Invalid flag in transformation: png". The plain flag names the download
+// after the public_id, which already carries the original name + extension.
+const withAttachment = (url) => {
   if (!url || !url.includes("/upload/")) return url;
-  const name = filename ? `:${encodeURIComponent(filename)}` : "";
-  return url.replace("/upload/", `/upload/fl_attachment${name}/`);
+  return url.replace("/upload/", "/upload/fl_attachment/");
 };
 
 const uploadToCloudinary = (buffer, options) => {
@@ -201,7 +206,7 @@ const downloadFile = async (req, res) => {
     res.status(200).json({
       message: "File retrieved successfully",
       file: {
-        url: withAttachment(file.cloudinaryUrl, file.originalName),
+        url: withAttachment(file.cloudinaryUrl),
         name: file.originalName,
         mimeType: file.mimeType,
         size: file.size,
@@ -566,7 +571,7 @@ const resolveShareLink = async (req, res) => {
         // unprotected shares download straight from the info response
         ...(file.isPasswordProtected
           ? {}
-          : { url: withAttachment(file.cloudinaryUrl, file.originalName) }),
+          : { url: withAttachment(file.cloudinaryUrl) }),
       },
     });
   } catch (error) {
@@ -602,7 +607,7 @@ const verifyFilePassword = async (req, res) => {
     res.status(200).json({
       message: "Password verified",
       file: {
-        url: withAttachment(file.cloudinaryUrl, file.originalName),
+        url: withAttachment(file.cloudinaryUrl),
         name: file.originalName,
         mimeType: file.mimeType,
       },
@@ -805,7 +810,7 @@ const guestDownloadInfo = async (req, res) => {
         // unprotected guest shares download straight from the info response
         ...(file.isPasswordProtected
           ? {}
-          : { url: withAttachment(file.cloudinaryUrl, file.originalName) }),
+          : { url: withAttachment(file.cloudinaryUrl) }),
       },
     });
   } catch (error) {
@@ -844,7 +849,7 @@ const verifyGuestFilePassword = async (req, res) => {
     res.status(200).json({
       message: "Password verified",
       file: {
-        url: withAttachment(file.cloudinaryUrl, file.originalName),
+        url: withAttachment(file.cloudinaryUrl),
         name: file.originalName,
         mimeType: file.mimeType,
       },

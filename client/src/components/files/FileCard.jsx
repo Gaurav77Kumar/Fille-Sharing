@@ -47,6 +47,12 @@ const FileCard = ({ file, onView, onShare, onDelete }) => {
     setError('');
     try {
       const response = await downloadFile(file._id);
+      // defensive: if the API ever responds without a URL, fail loudly
+      // instead of navigating to an undefined href (which served index.html)
+      if (!response.file?.url) {
+        setError('Download URL missing from server response.');
+        return;
+      }
       const link = document.createElement('a');
       // backend puts the (attachment-ready) download URL under `url` — reading
       // `cloudinaryUrl` here was undefined, so the SPA rewrite served index.html
