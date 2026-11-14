@@ -49,7 +49,10 @@ const FileCard = ({ file, onView, onShare, onDelete }) => {
       const response = await downloadFile(file._id);
       const link = document.createElement('a');
       link.href = response.file.cloudinaryUrl;
-      link.download = response.file.originalName;
+      // backend returns the filename as `name`; the fl_attachment flag in the
+      // URL is what actually names the saved file (download attr is ignored
+      // on cross-origin URLs)
+      link.download = response.file.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

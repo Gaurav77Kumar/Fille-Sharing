@@ -18,6 +18,7 @@ A modern, full-stack file sharing application with content deduplication, storag
 
 ### For Registered Users
 - **User Authentication** — Secure register, login, and logout with JWT (HTTP-only cookies) and a `/me` session-check endpoint
+- **Google Sign-In** — One-click "Continue with Google" via OAuth 2.0 (authorization code flow, server-side), with automatic account linking by verified email
 - **File Upload** — Upload up to 10 files (max 50MB each)
 - **Content Deduplication** — SHA-256 hashing skips re-uploading files you've already sent to Cloudinary
 - **Storage Quotas** — Per-user storage limit (500MB free tier), enforced atomically on every upload/delete
@@ -211,6 +212,11 @@ CLOUDINARY_SECRET=your_api_secret
 # Email Configuration (Gmail)
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 ```
 
 #### Client (`client/.env`)
@@ -219,6 +225,18 @@ EMAIL_PASS=your_app_password
 VITE_BACKEND_URI=http://localhost:5000/api
 VITE_BASE_URL=http://localhost:5000
 ```
+
+### Google Sign-In Setup (OAuth 2.0)
+
+1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth client ID** (Application type: *Web application*).
+2. Add **Authorized redirect URI** — must exactly match `GOOGLE_CALLBACK_URL`, e.g.:
+   - Local dev: `http://localhost:5000/api/auth/google/callback`
+   - Production: `https://<your-backend>/api/auth/google/callback`
+3. Copy the client ID and secret into `server/.env` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+
+**Flow:** button click → `GET /api/auth/google` (stores CSRF `state` in a short-lived cookie, redirects to Google) → user consents → `GET /api/auth/google/callback` (state verified, code exchanged server-side with the client secret, profile fetched, user found-or-created by verified email, JWT cookie issued) → redirect to `/dashboard`, where the existing `/auth/me` session check picks it up.
+
+> No new dependencies — the flow is implemented with Node's built-in `fetch` against Google's token/userinfo endpoints (`server/controllers/googleAuthController.js`).
 
 ### Installation
 
@@ -298,6 +316,8 @@ npm start
 | `POST` | `/auth/register` | Register new user | No |
 | `POST` | `/auth/login` | Login user, sets HTTP-only cookie | No |
 | `POST` | `/auth/logout` | Logout user | Yes |
+| `GET` | `/auth/google` | Start Google OAuth — redirects to Google's consent screen | No |
+| `GET` | `/auth/google/callback` | OAuth callback — verifies `state`, exchanges code, issues session cookie | No |
 | `GET` | `/auth/me` | Get current logged-in user (session check) | Yes |
 | `GET` | `/auth/users` | Get all users | Admin |
 | `GET` | `/auth/users/:userId` | Get user by ID | Yes |

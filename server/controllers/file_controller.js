@@ -490,7 +490,9 @@ const generateQR = async (req, res) => {
       return res.status(404).json({ message: "File not found" });
     }
 
-    const shareLink = `${req.protocol}://${req.get("host")}/api/files/share/${file.slug}`;
+    // the QR must open the CLIENT share page on the scanning phone — encoding
+    // this API endpoint made phones land on a raw JSON blob
+    const shareLink = file.sharedUrl;
     const qrCode = await QRCode.toDataURL(shareLink);
 
     res.status(200).json({
@@ -546,6 +548,11 @@ const resolveShareLink = async (req, res) => {
         sizeFormatted: file.sizeFormatted,
         isPasswordProtected: file.isPasswordProtected,
         expiresAt: file.expiresAt,
+        // the download URL is only gated for password-protected files —
+        // unprotected shares download straight from the info response
+        ...(file.isPasswordProtected
+          ? {}
+          : { url: withAttachment(file.cloudinaryUrl, file.originalName) }),
       },
     });
   } catch (error) {
@@ -781,6 +788,10 @@ const guestDownloadInfo = async (req, res) => {
         minutesRemaining: file.minutesRemaining,
         isPasswordProtected: file.isPasswordProtected,
         downloadCount: file.downloadCount,
+        // unprotected guest shares download straight from the info response
+        ...(file.isPasswordProtected
+          ? {}
+          : { url: withAttachment(file.cloudinaryUrl, file.originalName) }),
       },
     });
   } catch (error) {

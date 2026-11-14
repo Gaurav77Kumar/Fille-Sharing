@@ -26,14 +26,27 @@ const SharedFile = () => {
   const fetchFileInfo = async () => {
     setLoading(true);
     setError('');
-      const response = await getSharedFile(slug);
-      setFile(response.file);
-      setIsGuest(false);
+    try {
+      // 1. registered-user share first
+      try {
+        const response = await getSharedFile(slug);
+        setFile(response.file);
+        setIsGuest(false);
+        // unprotected files can download straight from the info response;
+        // protected ones need the password step, which sets downloadUrl after
+        setDownloadUrl(response.file.isPasswordProtected ? null : response.file.url || null);
+        return;
+      } catch {
+        // not a registered share — fall through to the guest lookup
+      }
 
+      // 2. guest share (separate collection, separate slugs)
       try {
         const guestResponse = await getGuestDownloadInfo(slug);
         setFile(guestResponse.file);
         setIsGuest(true);
+        setDownloadUrl(guestResponse.file.isPasswordProtected ? null : guestResponse.file.url || null);
+        return;
       } catch (guestErr) {
         const status = guestErr?.response?.status;
         if (status === 410) {
@@ -42,7 +55,10 @@ const SharedFile = () => {
           setError('File not found or has been deleted.');
         }
       }
-    
+    } finally {
+      // never leave the page spinning — success or failure, stop loading
+      setLoading(false);
+    }
   };
 
   const handlePasswordVerify = async (e) => {
@@ -59,7 +75,8 @@ const SharedFile = () => {
       } else {
         response = await verifyFilePassword(file.id, password);
       }
-      setDownloadUrl(response.file.cloudinaryUrl);
+      // both verify endpoints return the attachment-ready download URL as `url`
+      setDownloadUrl(response.file.url);
     } catch (err) {
       const status = err?.response?.status;
       if (status === 429) {
@@ -76,8 +93,7 @@ const SharedFile = () => {
     if (!downloadUrl) return;
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = file.originalName;
-    link.target = '_blank';
+    link.download = file.name || file.originalName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
