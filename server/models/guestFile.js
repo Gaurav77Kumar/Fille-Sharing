@@ -79,12 +79,11 @@ guestFileSchema.index (
 
 guestFileSchema.index({ ipAddress: 1, createdAt: -1 });
 
-guestFileSchema.methods.verifyPassword = async function(candidatPassword) {
-  if (!this.isPasswordProtected ) {
+guestFileSchema.methods.verifyPassword = async function(candidatePassword) {
+  if (!this.isPasswordProtected) {
     return true;
-    if (!this.password) return false;
   }
-  return await bcrypt.compare(candidatPassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 guestFileSchema.methods.isExpired = function(){
@@ -109,10 +108,8 @@ guestFileSchema.virtual('minutesRemaining').get(function() {
   return Math.max(0, Math.floor(remaining / (1000 * 60)));
 });
 
-guestFileSchema.virtual('findOneAndDelete').get(function() {
-  if (docs?.cloudinaryPublicId) {
-    const {v2: cloudinary} =  import('cloudinary');
-     cloudinary.uploader.destroy(docs.cloudinaryPublicId);
-  }
-});
+// NOTE: Cloudinary asset cleanup for guest files belongs in a
+// `pre('deleteOne')` hook or a scheduled cleanup job — NOT in a virtual.
+// (MongoDB's TTL deletion bypasses Mongoose hooks entirely, so a hook only
+// covers explicit deletions; expired-but-not-yet-reaped docs need a job.)
 export const GuestFile = mongoose.model("GuestFile", guestFileSchema);

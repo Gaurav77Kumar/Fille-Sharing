@@ -10,9 +10,9 @@ const verifyToken = async (req, res, next) => {
   try{
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // the payload carries only id & role — email lives in the DB, not the token
     req.user = {
       id: decoded.id,
-      email: decoded.email,
       role: decoded.role,
     };
     next();
@@ -47,9 +47,8 @@ const optionalAuth = async (req, res, next) => {
  try {
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   req.user = {
-    id:      decoded.id,
-    email:   decoded.email,
-    role:    decoded.role
+    id:   decoded.id,
+    role: decoded.role
   }
  } catch {
   // invalid token on optional route = treat as guest
@@ -71,14 +70,20 @@ const verifyTokenWithDB = async (req, res, next) => {
 
     // DB lookup confirm user still exists
     const user =  await User.findById(decoded.id)
-    .select('id email role')
+    .select('role')
     .lean();
 
     if(!user){
       return res.status(401).json({message: 'Account no longer exists.'})
     }
 
-    req.user = user;
+    // _id always rides along in lean() mode; map it so req.user has the
+    // same shape as verifyToken ({ id, role }) — 'id' alone would be
+    // undefined because lean() drops Mongoose virtuals
+    req.user = {
+      id: user._id.toString(),
+      role: user.role,
+    };
     next();
   } catch (error) {
     if(error.name === 'TokenExpiredError') {

@@ -1,8 +1,8 @@
 import  File  from "../models/file.js";
 import { GuestFile } from "../models/guestFile.js";
-import shortid from 'shortid';
 import User from "../models/user.js";
 import cloudinary from "../config/cloudinary.js";
+import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import crypto from "crypto";
 import QRCode from "qrcode";
@@ -28,6 +28,9 @@ const getResourceType = (mimetype) => {
   if (mimetype.startsWith("audio/")) return "audio";
   return "raw";
 };
+
+// shared with user_controller so deleteUser destroys assets with the right type
+export { getResourceType };
 
 const generateSlug = async (Model) => {
   let slug, exists;
@@ -150,7 +153,8 @@ const downloadFile = async (req, res) => {
       return res.status(403).json({ message: "File is not available" });
     }
 
-    if (file.hasExpiry && file.expiresAt && new Date() > file.expiresAt) {
+    if (file.isExpired()) {
+      // first request past expiry marks the file — later queries filter it cheaply
       file.status = "inactive";
       await file.save();
       return res.status(403).json({ message: "File has expired" });
@@ -409,17 +413,12 @@ const generateShareShortenLink = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Generate new short URL if needed
-    if (!file.shortUrl) {
-      file.shortUrl = shortid.generate();
-      await file.save();
-    }
-
-    const shareLink = `${req.protocol}://${req.get("host")}/api/files/share/${file.shortUrl}`;
+    // the share address derives from the persisted slug — no extra field needed
+    const shareLink = `${req.protocol}://${req.get("host")}/api/files/share/${file.slug}`;
 
     res.status(200).json({
       message: "Share link generated",
-      shortUrl: file.shortUrl,
+      slug: file.slug,
       shareLink,
     });
   } catch (error) {
@@ -452,7 +451,9 @@ const sendLinkEmail = async (req, res) => {
       to: recipientEmail,
       fileName: file.originalName,
       fileSize: file.sizeFormatted,
-      shareUrl: file.shareUrl,
+      // the email button opens the CLIENT app's /share/:slug page —
+      // the model's sharedUrl virtual builds this (BASE_URL never held a page)
+      shareUrl: file.sharedUrl,
       message,
       isPasswordProtected: file.isPasswordProtected,
     });
@@ -478,12 +479,8 @@ const generateQR = async (req, res) => {
     if (!file) {
       return res.status(404).json({ message: "File not found" });
     }
-    if (!file.shortUrl) {
-            file.shortUrl = nanoid(8);
-            await file.save();
-        }
 
-    const shareLink = `${req.protocol}://${req.get("host")}/api/files/share/${file.shortUrl}`;
+    const shareLink = `${req.protocol}://${req.get("host")}/api/files/share/${file.slug}`;
     const qrCode = await QRCode.toDataURL(shareLink);
 
     res.status(200).json({
@@ -607,13 +604,14 @@ const getUserFiles = async (req, res) => {
 const updateAllFileExpiry = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { hasExpiry, expiresAt } = req.body;
+    const { expiresAt } = req.body;
 
+    // no hasExpiry flag — the schema has no such path (it was silently dropped
+    // by strict mode); sending a date arms every file, omitting it disarms all
     const result = await File.updateMany(
       { CreatedBy: userId },
       {
-        hasExpiry,
-        expiresAt: hasExpiry ? new Date(expiresAt) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
     );
 
@@ -647,7 +645,7 @@ const downloadInfo = async (req, res) => {
         size: file.size,
         downloadCount: file.downloadCount,
         isPasswordProtected: file.isPasswordProtected,
-        hasExpiry: file.hasExpiry,
+        isExpired: file.isExpired(),
         expiresAt: file.expiresAt,
         status: file.status,
       },

@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 });
     
 const processJob = async (job) => {
-    const { to, fileName, fileSize, shareUrl, message, isPasswordProtected, subject } = job.data;
+    const { to, fileName, fileSize, sharedUrl, message, isPasswordProtected, subject } = job.data;
 
     await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -23,7 +23,8 @@ const processJob = async (job) => {
         <p><strong>File:</strong> ${fileName}</p>
         <p><strong>Size:</strong> ${fileSize}</p>
         ${message ? `<p><strong>Message:</strong> ${message}</p>` : ""}
-        <a href="${shareUrl}" style="padding:10px 20px;background:#6366f1;color:#fff;
+        <p><strong>Shared URL:</strong> <a href="${sharedUrl}" target="_blank" rel="noopener noreferrer">${sharedUrl}</a></p>
+        <a href="${sharedUrl}" style="padding:10px 20px;background:#6366f1;color:#fff;
            text-decoration:none;border-radius:6px;display:inline-block;margin-top:12px">
           Download File
         </a>

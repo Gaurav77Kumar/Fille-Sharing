@@ -2,11 +2,8 @@ import  User  from "../models/user.js";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 import { File } from "../models/file.js";
-import { v4 as uuidv4 } from "uuid";
-
-const generateUniqueId = () => {
-  return uuidv4();
-};
+import cloudinary from "../config/cloudinary.js";
+import { getResourceType } from "./file_controller.js";
 
 // REGISTER USER
 const registerUser = async (req, res) => {
@@ -104,7 +101,7 @@ const loginUser = async (req, res) => {
   { expiresIn: "24h" }
 );
 
-   await User.findByIdAndUpdate(user._id, { lastlogin: new Date()});
+   await User.findByIdAndUpdate(user._id, { lastLogin: new Date()});
 
     // SET COOKIE
      res.cookie("token", token, {
@@ -213,10 +210,19 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const userFiles = await File.find({ createdBy: req.params.userId });
-    const cloudinaryDelettes = userFiles.filter(f => f.cloudinaryId).map(f => f.cloudinaryuploader.destroy(f.cloudinaryId));
+    const userFiles = await File.find({ CreatedBy: req.params.userId });
 
-    await File.deleteMany({ createdBy: req.params.userId });
+    // destroy the Cloudinary assets — best-effort: a failed destroy must not
+    // block account deletion, so failures are logged for a cleanup job to retry
+    await Promise.all(userFiles.map((f) =>
+      cloudinary.uploader
+        .destroy(f.cloudinaryPublicId, { resource_type: getResourceType(f.mimeType) })
+        .catch((err) => console.error(
+          `[deleteUser] Cloudinary destroy failed for ${f.cloudinaryPublicId}:`, err.message
+        ))
+    ));
+
+    await File.deleteMany({ CreatedBy: req.params.userId });
     await User.findByIdAndDelete(req.params.userId);
 
     res.status(200).json({ message: "User deleted successfully" });

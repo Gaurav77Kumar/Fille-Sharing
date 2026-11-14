@@ -6,7 +6,6 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 
-// Shared cookie options — must match the session cookie set in loginUser
 const TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
@@ -91,7 +90,6 @@ const googleCallback = async (req, res) => {
     }
     const profile = await profileRes.json(); // { sub, name, email, picture, email_verified }
 
-    // never trust an unverified email — it could belong to someone else
     if (!profile.email || profile.email_verified !== true) {
       return clientRedirect("/login?error=email_not_verified");
     }
@@ -114,7 +112,6 @@ const googleCallback = async (req, res) => {
         isEmailVerified: true, // Google already verified the address
       });
     } else if (user.authProvider !== "google") {
-      // existing email/password account — link Google to it, don't duplicate
       user.authProvider = "google";
       user.isEmailVerified = true;
       if (profile.picture && !user.profilePic) user.profilePic = profile.picture;
@@ -128,12 +125,11 @@ const googleCallback = async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    await User.findByIdAndUpdate(user._id, { lastlogin: new Date() });
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
     res.cookie("token", token, TOKEN_COOKIE_OPTIONS);
 
     // STEP 6 — send them into the app; the frontend's /me session check picks
-    // up the cookie and AuthContext restores the session
     clientRedirect("/dashboard");
   } catch (error) {
     console.error("[GoogleAuth] callback failed:", error.message);

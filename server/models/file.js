@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import bcrypt from 'bcryptjs';
 
 const fileSchema = new Schema({
     originalName: {
@@ -90,7 +91,7 @@ const fileSchema = new Schema({
     }
 );
 
-fileSchema.index({ createdBy: 1, deletedAt: 1, createdAt: -1 });
+fileSchema.index({ CreatedBy: 1, deletedAt: 1, createdAt: -1 });
 fileSchema.index({ expiresAt: 1 , deletedAt: 1 });
 
 fileSchema.methods.verifyPassword = async function(candidatePassword){
@@ -116,7 +117,8 @@ fileSchema.virtual('sizeFormatted').get(function (){
 });
 
 fileSchema.virtual('sharedUrl').get(function(){
-    return `${process.env.BASE_URL}/file/${this.slug}`;
+    // the share page lives on the CLIENT app (/share/:slug), not the API server
+    return `${process.env.CLIENT_URL}/share/${this.slug}`;
 });
 
 fileSchema.query.active = function() {
