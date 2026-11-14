@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { track } from '@vercel/analytics';
 import {  generateQRCode, sendFileEmail } from '../../api/fileApi';
 
@@ -28,7 +29,7 @@ const ShareModal = ({ file, onClose }) => {
     try {
       const response = await generateQRCode(file._id);
       setQrCode(response.qrCode);
-    } catch (err) {
+    } catch {
       setError('Failed to generate QR code. Please try again.');
     } finally {
       setLoading(false);
@@ -55,7 +56,8 @@ const ShareModal = ({ file, onClose }) => {
     }
   };
 
-  return (
+  // Portal to <body> — glass containers' backdrop-filter hijacks position:fixed
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
 
@@ -300,7 +302,8 @@ const ShareModal = ({ file, onClose }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

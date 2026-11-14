@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { downloadFile, updateFileExpiry, updateFilePassword } from '../../api/fileApi';
 
 const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, onUpdate }) => {
@@ -77,7 +78,7 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
       const response = await updateFileExpiry(file._id, payload);
       onUpdate(response.file);
       showSuccess('Expiry updated successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to update expiry');
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
       onUpdate(response.file);
       setPassword((prev) => ({ ...prev, value: '' }));
       showSuccess('Password updated successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to update password');
     } finally {
       setLoading(false);
@@ -124,7 +125,9 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
 
   const fileIcon = getFileIcon();
 
-  return (
+  // Portal to <body> — the page's glass containers use backdrop-filter, which
+  // hijacks position:fixed and anchored this modal to the container's top-left
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
 
@@ -463,7 +466,8 @@ const FileDetailsModal = ({ file, onClose, onDelete, onShare, onStatusChange, on
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
